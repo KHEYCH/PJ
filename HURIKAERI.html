@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>プロジェクト振り返り記録：事象ベース</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --primary-color: #2a6fc9;
+            --primary-light: #eef4fc;
+            --primary-dark: #1a4a8e;
+            --secondary-color: #6c5ce7;
+            --accent-color: #00cec9;
+            --success-color: #26de81;
+            --warning-color: #fdcb6e;
+            --danger-color: #fc5c65;
+            --dark-color: #2d3436;
+            --light-color: #f9f9f9;
+            --gray-color: #636e72;
+            --gradient-primary: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            --gradient-accent: linear-gradient(135deg, var(--accent-color), var(--secondary-color));
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.15);
+            --border-radius-sm: 4px;
+            --border-radius-md: 8px;
+            --border-radius-lg: 16px;
+            --transition-fast: 0.2s ease;
+            --transition-normal: 0.3s ease;
+            --border-light: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans JP', 'Poppins', sans-serif;
+            background-color: var(--light-color);
+            color: var(--dark-color);
+            height: 100%;
+            overflow: hidden;
+            line-height: 1.6;
+        }
+        
+        .slide-container {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease, transform 0.5s ease, visibility 0.5s;
+            padding: 30px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            background: var(--light-color);
+            overflow-y: auto;
+            transform: translateY(20px);
+        }
+        
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 1;
+            transform: translateY(0);
+        }
+        
+        .title-slide {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: var(--gradient-primary);
+            color: white;
+        }
+        
+        .title-slide .slide-title {
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            max-width: 800px;
+            margin: 0 auto 30px;
+        }
+        
+        .title-slide .section {
+            background-color: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .title-slide .section-content {
+            color: white;
+        }
+        
+        .slide-title {
+            font-size: 2.5em;
+            margin-bottom: 25px;
+            color: var(--primary-color);
+            font-weight: 700;
+            width: 100%;
+            text-align: center;
+            padding: 10px 0;
+            position: relative;
+        }
+        
+        .slide-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: var(--gradient-primary);
+            border-radius: 3px;
+        }
+        
+        .slide-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding: 0 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 25px;
+            border-radius: var(--border-radius-md);
+            background-color: white;
+            box-shadow: var(--shadow-md);
+            transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+            border: var(--border-light);
+        }
+        
+        .section:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .section-title {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            font-weight: 600;
+            border-bottom: 2px solid rgba(42, 111, 201, 0.2);
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        
+        .section-content {
+            font-size: 1.2em;
+            line-height: 1.6;
+        }
+        
+        .icon-box {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 36px;
+            height: 36px;
+            background: var(--primary-light);
+            border-radius: 50%;
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+        
+        .consultant-tip {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #f0f7ff;
+            border-left: 4px solid var(--primary-color);
+            border-radius: var(--border-radius-sm);
+            font-size: 0.95em;
+            position: relative;
+        }
+        
+        .consultant-tip::before {
+            content: '💡 コンサルタントの視点';
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--primary-dark);
+        }
+        
+        .common-pattern {
+            background-color: #fff8e1;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: var(--border-radius-sm);
+            margin-top: 15px;
+            font-size: 0.95em;
+        }
+        
+        .common-pattern::before {
+            content: '📊 よくあるパターン';
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #ff9800;
+        }
+        
+        .genre-header {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 15px 20px;
+            font-size: 1.8em;
+            margin-bottom: 25px;
+            border-radius: var(--border-radius-md);
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .genre-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%);
+        }
+        
+        .event-header {
+            font-size: 1.6em;
+            color: var(--primary-dark);
+            margin: 15px 0;
+            font-weight: 600;
+            position: relative;
+            padding-left: 20px;
+            line-height: 1.3;
+        }
+        
+        .event-header::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background: var(--gradient-primary);
+            border-radius: 3px;
+        }
+        
+        .navigation {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+            z-index: 10;
+        }
+        
+        .nav-btn {
+            padding: 12px 20px;
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all var(--transition-normal);
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .nav-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .nav-btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .slide-indicator {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            color: var(--gray-color);
+            font-size: 1em;
+            z-index: 10;
+            background-color: white;
+            padding: 8px 16px;
+            border-radius: 50px;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .overview-slide .genre-item {
+            margin-bottom: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: var(--border-radius-md);
+            box-shadow: var(--shadow-md);
+            cursor: pointer;
+            transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+            border: var(--border-light);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .overview-slide .genre-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: var(--gradient-primary);
+        }
+        
+        .overview-slide .genre-item:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .overview-slide .genre-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .overview-slide .genre-events {
+            margin-left: 20px;
+            color: var(--gray-color);
+        }
+        
+        .overview-slide .genre-events div {
+            margin-bottom: 8px;
+            transition: color var(--transition-fast);
+        }
+        
+        .overview-slide .genre-events div:hover {
+            color: var(--primary-color);
+        }
+        
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 12px;
+            border-radius: 50px;
+            font-size: 0.85em;
+            margin-right: 10px;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .tag-overview {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .tag-action {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .tag-insight {
+            background-color: var(--warning-color);
+            color: var(--dark-color);
+        }
+        
+        .home-btn {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            z-index: 10;
+            padding: 10px 20px;
+            background: white;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all var(--transition-normal);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+        }
+        
+        .home-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .home-btn i {
+            margin-right: 5px;
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin-top: 20px;
+        }
+        
+        .icon-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .icon-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            width: calc(25% - 15px);
+            padding: 15px;
+            background-color: white;
+            border-radius: var(--border-radius-md);
+            box-shadow: var(--shadow-sm);
+            transition: transform var(--transition-normal);
+        }
+        
+        .icon-item:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .icon-item i {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        
+        .icon-item h4 {
+            margin: 0 0 5px;
+            font-size: 1.1em;
+        }
+        
+        .icon-item p {
+            margin: 0;
+            font-size: 0.9em;
+            color: var(--gray-color);
+        }
+        
+        .bg-pattern {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-image: radial-gradient(circle at 10% 20%, rgba(42, 111, 201, 0.05) 0%, transparent 20%),
+                              radial-gradient(circle at 90% 80%, rgba(108, 92, 231, 0.05) 0%, transparent 20%),
+                              radial-gradient(circle at 50% 50%, rgba(0, 206, 201, 0.05) 0%, transparent 30%);
+            z-index: -1;
+        }
+        
+        .matrix-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .matrix-quadrant {
+            padding: 15px;
+            border-radius: var(--border-radius-sm);
+            background-color: white;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .matrix-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        
+        .quadrant-high-impact-high-effort {
+            border-top: 3px solid #e74c3c;
+        }
+        
+        .quadrant-high-impact-low-effort {
+            border-top: 3px solid #2ecc71;
+        }
+        
+        .quadrant-low-impact-high-effort {
+            border-top: 3px solid #e67e22;
+        }
+        
+        .quadrant-low-impact-low-effort {
+            border-top: 3px solid #3498db;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animated-item {
+            animation: fadeIn 0.5s ease-out forwards;
+            opacity: 0;
+        }
+        
+        .animated-delay-1 { animation-delay: 0.1s; }
+        .animated-delay-2 { animation-delay: 0.2s; }
+        .animated-delay-3 { animation-delay: 0.3s; }
+        .animated-delay-4 { animation-delay: 0.4s; }
+        
+        .progress-chart {
+            width: 100%;
+            height: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 1s ease-out;
+        }
+        
+        .progress-success { background-color: var(--success-color); }
+        .progress-warning { background-color: var(--warning-color); }
+        .progress-danger { background-color: var(--danger-color); }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <!-- Title Slide -->
+        <div class="slide title-slide active" id="slide-0">
+            <div class="bg-pattern"></div>
+            <h1 class="slide-title animated-item">プロジェクト振り返り記録<br>事象起点スタイル</h1>
+            <div class="slide-content">
+                <div class="section animated-item animated-delay-1">
+                    <div class="section-content" style="text-align: center; font-size: 1.5em;">
+                        <p><i class="fas fa-check-circle"></i> ChatGPT・Claude活用</p>
+                        <p style="margin-top: 40px;">このプレゼンテーションでは、プロジェクト中に発生した様々な事象と、<br>その対処方法、得られた気づきを整理しています。</p>
+                        
+                        <div class="icon-grid animated-item animated-delay-2">
+                            <div class="icon-item">
+                                <i class="fas fa-lightbulb"></i>
+                                <h4>洞察</h4>
+                                <p>問題に対する深い理解</p>
+                            </div>
+                            <div class="icon-item">
+                                <i class="fas fa-tools"></i>
+                                <h4>対処法</h4>
+                                <p>効果的な解決策</p>
+                            </div>
+                            <div class="icon-item">
+                                <i class="fas fa-brain"></i>
+                                <h4>学び</h4>
+                                <p>得られた教訓</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Overview Slide -->
+        <div class="slide overview-slide" id="slide-1">
+            <h2 class="slide-title">目次</h2>
+            <div class="slide-content">
+                <div class="genre-item" onclick="goToSlide(2)">
+                    <div class="genre-title">🗂ジャンルA：業務の制度と仕組み系</div>
+                    <div class="genre-events">
+                        <div>• 事象A-1：ドキュメントの体系・上下/横の関係性がわからず混乱した</div>
+                        <div>• 事象A-2：公式ルールと現場運用の間に差があり、業務が空回りした</div>
+                    </div>
+                </div>
+                
+                <div class="genre-item" onclick="goToSlide(4)">
+                    <div class="genre-title">🗂ジャンルB：数値とロジック系</div>
+                    <div class="genre-events">
+                        <div>• 事象B-1：同じ項目名だが、集計ロジックが異なり数値がずれるケースがあった</div>
+                        <div>• 事象B-2：検算の重要性が薄れ、ロジックへの過信が見られた</div>
+                    </div>
+                </div>
+                
+                <div class="genre-item" onclick="goToSlide(6)">
+                    <div class="genre-title">🗂ジャンルC：関係者マネジメント系</div>
+                    <div class="genre-events">
+                        <div>• 事象C-1：品質チームとの連携が取れず、至急時に対応が滞った</div>
+                        <div>• 事象C-2：弊社側で関係者の役割把握が不十分で、発注や意思決定が滞留した</div>
+                    </div>
+                </div>
+                
+                <div class="genre-item" onclick="goToSlide(8)">
+                    <div class="genre-title">🗂ジャンルD：プロジェクト進行・運営系</div>
+                    <div class="genre-events">
+                        <div>• 事象D-1：フォルダ構成が深堀化し、最新資料の検索に時間がかかった</div>
+                    </div>
+                </div>
+                
+                <div class="genre-item" onclick="goToSlide(9)">
+                    <div class="genre-title">🗂ジャンルE：発注・予算・意思決定構造系</div>
+                    <div class="genre-events">
+                        <div>• 事象E-1：意思決定者／予算責任者の不明確さにより手続きが滞った</div>
+                    </div>
+                </div>
+                
+                <div class="genre-item" onclick="goToSlide(10)">
+                    <div class="genre-title">🗂ジャンルF：人材育成・チーム運営系</div>
+                    <div class="genre-events">
+                        <div>• 事象F-1：部下が一つの領域を自走できるようになった</div>
+                        <div>• 事象F-2：部下が完璧ではない説明をした場面を巻き取る必要があった</div>
+                    </div>
+                </div>
+　　　　　　　　<div class="genre-item" onclick="goToSlide(12)">
+    <div class="genre-title">📊 まとめと今後への提言</div>
+    <div class="genre-events">
+        <div>• プロジェクト振り返りの主要ポイント</div>
+        <div>• コンサルタントからの戦略的提言</div>
+    </div>
+</div>
+            </div>
+        </div>
+        
+        <!-- Genre A - Event 1 -->
+        <div class="slide" id="slide-2">
+            <div class="bg-pattern"></div>
+            <h2 class="slide-title">ジャンルA：業務の制度と仕組み系</h2>
+            <div class="slide-content">
+                <div class="event-header animated-item">事象A-1：ドキュメントの体系・上下/横の関係性がわからず混乱した</div>
+                
+                <div class="section animated-item animated-delay-1">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-search"></i></div>
+                        <span class="tag tag-overview">概要</span>
+                    </div>
+                    <div class="section-content">
+                        業務で使用される文書群が、何に基づいて作成されたものか、クライアント文書体系の中でどこに位置するかが不明確だった。文書が古かったり、現場運用と齟齬があり、新SKU受け入れ時などにどの文書を更新対象にすべきかが分からず困惑。
+                    </div>
+                </div>
+                
+                <div class="section animated-item animated-delay-2">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-wrench"></i></div>
+                        <span class="tag tag-action">対処</span>
+                    </div>
+                    <div class="section-content">
+                        出典元と位置づけを一つずつ確認し、GQP/GDP→本社SOP→部門内ルール→チェックリストまでを構造整理。体系的に「この文書は何の補足か」をレビュー時に確認する癖をチームで共有。
+                    </div>
+                </div>
+                
+                <div class="section animated-item animated-delay-3">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-lightbulb"></i></div>
+                        <span class="tag tag-insight">気づき・学び</span>
+                    </div>
+                    <div class="section-content">
+                        情報の階層性（縦）と並列文書間の補完関係（横）を明確にしておくことで、属人判断を排除できる。
+                        
+                        <div class="consultant-tip">
+                            ドキュメント体系の混乱は多くの組織で共通の課題です。効果的な方法は「情報アーキテクチャ」の構築です。まず最上位の方針文書（ポリシー）を特定し、次に手順書（SOP）、そして実務レベルの作業指示書という階層構造を明確にします。各ドキュメントには「バージョン」「承認者」「上位文書」「関連文書」を必ず記載し、トレーサビリティを確保しましょう。
+                        </div>
+                        
+                        <div class="common-pattern">
+                            この問題の根本原因は多くの場合「ドキュメントガバナンスの欠如」です。文書が増えるにつれて全体構造が曖昧になり、更新が行われても関連文書への反映が漏れるサイロ化が進みます。特に組織変更や担当者交代が頻繁に起こる環境では深刻化します。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Genre A - Event 2 -->
+        <div class="slide" id="slide-3">
+            <div class="bg-pattern"></div>
+            <h2 class="slide-title">ジャンルA：業務の制度と仕組み系</h2>
+            <div class="slide-content">
+                <div class="event-header animated-item">事象A-2：公式ルールと現場運用の間に差があり、業務が空回りした</div>
+                
+                <div class="section animated-item animated-delay-1">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-search"></i></div>
+                        <span class="tag tag-overview">概要</span>
+                    </div>
+                    <div class="section-content">
+                        配送ベンダーと現場社員の間で共有されている"細かいTODO"や運用が、公式文書に反映されておらず、実行レベルでギャップが生まれた。
+                    </div>
+                </div>
+                
+                <div class="section animated-item animated-delay-2">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-wrench"></i></div>
+                        <span class="tag tag-action">対処</span>
+                    </div>
+                    <div class="section-content">
+                        その場限りの処置にせず、何が公式で、何が補完なのかを明文化し、必要があればドキュメント改訂提案を実施。曖昧な点はトラブルログと照合し、仕組みに組み込むか代替案を検討。
+                    </div>
+                </div>
+                
+                <div class="section animated-item animated-delay-3">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-lightbulb"></i></div>
+                        <span class="tag tag-insight">気づき・学び</span>
+                    </div>
+                    <div class="section-content">
+                        "現場でしか知られていない動き"を公式化・仕組み化することが、品質と効率の両立につながる。
+                        
+                        <div class="consultant-tip">
+                            「公式ルール」と「現場運用」の乖離は、多くの組織で見られる典型的な課題です。この問題を解決するためには、トップダウンとボトムアップの両方のアプローチが必要です。まず「暗黙知の形式知化」として、現場の運用実態を詳細に調査・文書化します。次に、公式ルールと現場運用の差分を特定し、ギャップを埋めるための改善提案を行います。重要なのは、単なる「文書化」ではなく、現場の知恵を尊重した上で、標準化と柔軟性のバランスを取ることです。
+                        </div>
+                        
+                        <div class="common-pattern">
+                            この問題は「ルールと現実のデカップリング」と呼ばれる組織現象です。時間経過とともに、公式ルールは形骸化し、現場は独自の「ワークアラウンド（回避策）」を作り出します。これは特に①頻繁な環境変化がある、②現場への権限委譲が不十分、③ルール改定プロセスが煩雑、のいずれかの条件がある組織で顕著に表れます。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Genre B - Event 1 -->
+        <div class="slide" id="slide-4">
+            <div class="bg-pattern"></div>
+            <h2 class="slide-title">ジャンルB：数値とロジック系</h2>
+            <div class="slide-content">
+                <div class="event-header animated-item">事象B-1：同じ項目名だが、集計ロジックが異なり数値がずれるケースがあった</div>
+                
+                <div class="section animated-item animated-delay-1">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-search"></i></div>
+                        <span class="tag tag-overview">概要</span>
+                    </div>
+                    <div class="section-content">
+                        配送実績の数値が、配送業者側では出荷数量、社内では到着確認数量を指しており、用語が同じでも数値が一致しないケースが頻発。
+                    </div>
+                </div>
+                
+                <div class="section animated-item animated-delay-2">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-wrench"></i></div>
+                        <span class="tag tag-action">対処</span>
+                    </div>
+                    <div class="section-content">
+                        定義・取得元・集計粒度を1項目ずつ洗い出し、「なぜズレるのか」を差分表で明示。業務上どちらの数字が必要か、目的別に定義書を作成。
+                        
+                        <div style="margin-top: 20px; background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+                            <h4 style="margin-top: 0; color: var(--primary-color);">数値乖離の原因例：</h4>
+                            <ul style="margin-bottom: 0;">
+                                <li><strong>タイミングの違い</strong>：出荷時点 vs 受領時点</li>
+                                <li><strong>カウント方法</strong>：個数 vs 梱包数 vs 重量</li>
+                                <li><strong>対象範囲</strong>：すべて vs 特定条件のみ</li>
+                                <li><strong>計算ロジック</strong>：集計方法の違い</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section animated-item animated-delay-3">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-lightbulb"></i></div>
+                        <span class="tag tag-insight">気づき・学び</span>
+                    </div>
+                    <div class="section-content">
+                        数値は"定義"があって初めて意味を持つ。「ズレ」は"誰の目的"と"どの定義"で生まれているかを突くと整理できる。
+                        
+                        <div class="consultant-tip">
+                            数値の不一致は単なる技術的問題ではなく、「目的の違い」から生じることが多いです。例えば、営業は売上実績を重視し、物流は在庫精度を重視します。解決のカギは「共通言語」の構築です。重要なKPIについては「データディクショナリー」を作成し、定義・算出方法・主たる利用者・更新頻度を明記しましょう。さらに、数値の「絶対値」よりも「トレンド」や「変化」に注目することで、不必要な混乱を避けられます。
+                        </div>
+                        
+                        <div class="common-pattern">
+                            この問題は特に異なる部門・組織間の連携で頻発します。例えば「売上」という同じ用語でも、会計部門は税込み・返品控除後の数字を使い、営業部門は税抜きの出荷ベース数字を使うといった不一致が生じます。これは「同じ言葉で違うものを指している」典型的なコミュニケーション問題です。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Genre B - Event 2 -->
+        <div class="slide" id="slide-5">
+            <div class="bg-pattern"></div>
+            <h2 class="slide-title">ジャンルB：数値とロジック系</h2>
+            <div class="slide-content">
+                <div class="event-header animated-item">事象B-2：検算の重要性が薄れ、ロジックへの過信が見られた</div>
+                
+                <div class="section animated-item animated-delay-1">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-search"></i></div>
+                        <span class="tag tag-overview">概要</span>
+                    </div>
+                    <div class="section-content">
+                        検算手順は存在していたが、新しい運用が始まる際や繁忙期にロジックだけに頼り、集計根拠の確認が疎かになるケースが発生。
+                    </div>
+                </div>
+                
+                <div class="section animated-item animated-delay-2">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-wrench"></i></div>
+                        <span class="tag tag-action">対処</span>
+                    </div>
+                    <div class="section-content">
+                        レビュー会にて、単なる出力確認でなく"ロジックの口頭説明"を実施。理解度に応じて手計算と突合させ、形式でなく中身の納得感を求めるよう意識。
+                        
+                        <div style="margin-top: 20px; background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+                            <h4 style="margin-top: 0; color: var(--primary-color);">効果的な検算アプローチ：</h4>
+                            <ul style="margin-bottom: 0;">
+                                <li><strong>サンプリング検証</strong>：代表的なケースで手計算</li>
+                                <li><strong>異常値検出</strong>：過去データとの乖離チェック</li>
+                                <li><strong>クロスチェック</strong>：別の角度からの検証</li>
+                                <li><strong>合理性検証</strong>：結果が理にかなっているか</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section animated-item animated-delay-3">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-lightbulb"></i></div>
+                        <span class="tag tag-insight">気づき・学び</span>
+                    </div>
+                    <div class="section-content">
+                        "正しさの納得"は、ロジックと手が動いた実感の両立で得られる。チェックとは単なる確認でなく、"理解して責任を持つこと"の訓練でもある。
+                        
+                        <div class="consultant-tip">
+                            データ分析においては「ガベージイン・ガベージアウト（GIGOの法則）」という原則があります。つまり、入力データやロジックに問題があれば、どんなに複雑な分析も間違った結果を導きます。特にデジタル化が進む現代では、ブラックボックス化したロジックを無批判に信頼する「オートメーションバイアス」が問題となっています。効果的な対策としては、①重要な分析には必ず「サンプルケース」による検証を義務付ける、②データの異常値を自動検出するシステムを導入する、③分析結果に対する「合理性チェック」の文化を醸成する、の3点が挙げられます。
+                        </div>
+                        
+                        <div class="common-pattern">
+                            この問題は「過度な効率化」「時間的プレッシャー」「専門知識の断絶」が組み合わさると深刻化します。例えば、エクセルの複雑な関数やマクロを作った本人が異動した後、新担当者は「動いているから」という理由だけで検証せずに使い続けるケースが典型的です。また、AIやアルゴリズムの判断を無批判に受け入れる「アルゴリズム依存」も現代的な課題です。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Genre C - Event 1 -->
+        <div class="slide" id="slide-6">
+            <div class="bg-pattern"></div>
+            <h2 class="slide-title">ジャンルC：関係者マネジメント系</h2>
+            <div class="slide-content">
+                <div class="event-header animated-item">事象C-1：品質チームとの連携が取れず、至急時に対応が滞った</div>
+                
+                <div class="section animated-item animated-delay-1">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-search"></i></div>
+                        <span class="tag tag-overview">概要</span>
+                    </div>
+                    <div class="section-content">
+                        品質チームに依頼すべき事象が発生した際、窓口や対応範囲が明確でなく、やり取りが滞る場面があった。
+                    </div>
+                </div>
+                
+                <div class="section animated-item animated-delay-2">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-wrench"></i></div>
+                        <span class="tag tag-action">対処</span>
+                    </div>
+                    <div class="section-content">
+                        クライアントに配送と品質の切り分けを確認。誰が対応できるかを迅速に把握することに注力しながら業務を進行。並行して、動いた経緯を文書化し、今後の参考用プロセスフローとして整理。
+                        
+                        <div style="margin-top: 20px; background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+                            <h4 style="margin-top: 0; color: var(--primary-color);">部門間連携のポイント：</h4>
+                            <ul style="margin-bottom: 0;">
+                                <li><strong>単一窓口設置</strong>：明確な責任者の設定</li>
+                                <li><strong>SLA締結</strong>：対応時間・品質の合意</li>
+                                <li><strong>エスカレーションパス</strong>：問題解決の階層化</li>
+                                <li><strong>定例会議</strong>：継続的な関係構築</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section animated-item animated-delay-3">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-lightbulb"></i></div>
+                        <span class="tag tag-insight">気づき・学び</span>
+                    </div>
+                    <div class="section-content">
+                        業務を止めないためには、「まずやってみる → 構造は後から整理」が功を奏する場面もある。とにかく"動ける人が動く"が優先。
+                        
+                        <div class="consultant-tip">
+                            部門間連携の問題は「構造的問題」と「関係性問題」の二面性があります。構造面では、明確な責任分担（RACI）やエスカレーションルートの確立が重要ですが、それだけでは不十分です。関係性面では、定期的な「コラボレーションセッション」を設け、部門間の相互理解を深めることが効果的です。また、有事の際に備えて「クイックレスポンスチーム」のような部門横断的な緊急対応体制を予め構築しておくことも重要です。さらに、「部門間連携KPI」を設定し、協力度合いを定量的に評価する仕組みも検討に値します。
+                        </div>
+                        
+                        <div class="common-pattern">
+                            企業規模が大きくなるほど「サイロ化（部門の孤立）」が進み、危機時の対応が遅れる傾向があります。特に「品質」「コンプライアンス」「リスク管理」などの部門は、日常業務では「コスト部門」と見なされがちですが、有事の際には極めて重要な役割を担います。このギャップが連携不全を引き起こす典型的なパターンです。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Genre C - Event 2 -->
+        <div class="slide" id="slide-7">
+            <div class="bg-pattern"></div>
+            <h2 class="slide-title">ジャンルC：関係者マネジメント系</h2>
+            <div class="slide-content">
+                <div class="event-header animated-item">事象C-2：弊社側で関係者の役割把握が不十分で、発注や意思決定が滞留した</div>
+                
+                <div class="section animated-item animated-delay-1">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-search"></i></div>
+                        <span class="tag tag-overview">概要</span>
+                    </div>
+                    <div class="section-content">
+                        誰が発注権限を持っているか、どの部署の予算かが把握できず、クライアント側も巻き取らなかったため業務が止まりかけた。
+                    </div>
+                </div>
+                
+                <div class="section animated-item animated-delay-2">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-wrench"></i></div>
+                        <span class="tag tag-action">対処</span>
+                    </div>
+                    <div class="section-content">
+                        関係者に確認しつつ、進行中タスクの全体像を図化 → その中で各関係者の役割・責任（RACI）を洗い出し、合意形成して業務再開。
+                        
+                        <div style="margin-top: 20px; background-color: #f0f7ff; padding: 15px; border-radius: 8px;">
+                            <h4 style="margin-top: 0; color: var(--primary-color);">RACI分析の基本フレームワーク</h4>
+                            <ul style="margin-bottom: 0;">
+                                <li><strong>R (Responsible)</strong>：実行責任者 - 直接作業を担当</li>
+                                <li><strong>A (Accountable)</strong>：説明責任者 - 最終的な承認権限</li>
+                                <li><strong>C (Consulted)</strong>：協議対象者 - 専門的な助言</li>
+                                <li><strong>I (Informed)</strong>：報告対象者 - 経過・結果の共有</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section animated-item animated-delay-3">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-lightbulb"></i></div>
+                        <span class="tag tag-insight">気づき・学び</span>
+                    </div>
+                    <div class="section-content">
+                        「誰がいつ何に責任を持つのか」が曖昧なまま業務を始めない。構造が分からなければまず図解し、話のベースを作ること。
+                        
+                        <div class="consultant-tip">
+                            「責任の所在の曖昧さ」は多くのプロジェクト遅延の根本原因です。特に複雑な組織やマトリックス組織では、意思決定プロセスが不明確になりがちです。プロジェクト開始時に「ディシジョンマトリックス」を作成することが効果的です。これは「どのレベルの決定を誰が承認するか」を明確にするツールです。例えば、予算内の10%までの変更はPM権限、30%までは部門長、それ以上は役員承認といった具合に階層化します。また、有事の際の「エスカレーションパス」も予め定義しておくことで、問題発生時の迅速な対応が可能になります。
+                        </div>
+                        
+                        <div class="common-pattern">
+                            この問題は「責任の拡散」として知られ、特に部門間連携が必要なプロジェクトで発生します。多くの場合、各部門は自部門の責任範囲のみを考え、全体最適の視点が欠けています。また、権限と責任のバランスが取れていないケースも多く、「責任はあるが権限がない」状況が生まれると、意思決定が極端に慎重になり、停滞を招きます。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Genre D - Event 1 -->
+        <div class="slide" id="slide-8">
+            <div class="bg-pattern"></div>
+            <h2 class="slide-title">ジャンルD：プロジェクト進行・運営系</h2>
+            <div class="slide-content">
+                <div class="event-header animated-item">事象D-1：フォルダ構成が深堀化し、最新資料の検索に時間がかかった</div>
+                
+                <div class="section animated-item animated-delay-1">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-search"></i></div>
+                        <span class="tag tag-overview">概要</span>
+                    </div>
+                    <div class="section-content">
+                        初期設計されたフォルダ構成に対し、各チーム・各工程ごとに追加のサブフォルダが乱立し、階層が深くなりすぎて必要資料が探しにくくなった。
+                    </div>
+                </div>
+                
+                <div class="section animated-item animated-delay-2">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-wrench"></i></div>
+                        <span class="tag tag-action">対処</span>
+                    </div>
+                    <div class="section-content">
+                        ジャンル（例：進捗・成果物・会議体）× 粒度（例：月次・週次）で分類した構成案を作成。ファイルには「マスタ・作業中・参照」の属性も明記し、構成管理台帳にまとめて共有。
+                        
+                        <div style="margin-top: 20px; background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+                            <h4 style="margin-top: 0; color: var(--primary-color);">効率的な情報管理の基本原則：</h4>
+                            <ul style="margin-bottom: 0;">
+                                <li><strong>階層は3層以内</strong>：深すぎる階層は混乱を招く</li>
+                                <li><strong>命名規則の統一</strong>：検索性向上のための基盤</li>
+                                <li><strong>メタデータ活用</strong>：複数の視点からの検索</li>
+                                <li><strong>最新性の明示</strong>：バージョン管理の徹底</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section animated-item animated-delay-3">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-lightbulb"></i></div>
+                        <span class="tag tag-insight">気づき・学び</span>
+                    </div>
+                    <div class="section-content">
+                        「使いやすさ」だけでなく「引き継ぎやすさ」「再利用しやすさ」も設計思想に入れるべき。構成は"情報の論理構造"を反映すべき。
+                        
+                        <div class="consultant-tip">
+                            情報管理は「効率性」と「ガバナンス」のバランスが重要です。プロジェクト初期に「情報管理計画」を策定し、①文書分類体系、②命名規則、③バージョン管理手法、④アクセス権限設計、⑤アーカイブポリシーを明確にしておくことが効果的です。特に注目すべきは「タグベース」の情報管理です。従来の階層型フォルダ構造ではなく、メタデータ（タグ）による分類を採用することで、様々な視点からの検索が可能になります。また、定期的な「情報整理デー」を設け、不要ファイルの削除やリンク切れの修正などのメンテナンスを行うことも重要です。
+                        </div>
+                        
+                        <div class="common-pattern">
+                            情報管理の問題は「エントロピー増大の法則」に従います。つまり、明確なルールと定期的なメンテナンスがなければ、時間の経過とともに必ず混乱が増大します。特に頻繁なメンバー変更があるプロジェクトや、複数チームが協働するプロジェクトでは、この問題が顕著になります。初期設計時には整然としていても、進行とともに「便利だから」と個人やチームの判断でフォルダが追加され、全体構造が崩れていくのが典型的なパターンです。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Genre E - Event 1 -->
+        <div class="slide" id="slide-9">
+            <div class="bg-pattern"></div>
+            <h2 class="slide-title">ジャンルE：発注・予算・意思決定構造系</h2>
+            <div class="slide-content">
+                <div class="event-header animated-item">事象E-1：意思決定者／予算責任者の不明確さにより手続きが滞った</div>
+                
+                <div class="section animated-item animated-delay-1">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-search"></i></div>
+                        <span class="tag tag-overview">概要</span>
+                    </div>
+                    <div class="section-content">
+                        発注を進めようとしたが、どの予算か、どの部署が責任を持つのかが不明で、誰も決裁を取れず稟議が止まった。
+                    </div>
+                </div>
+                
+                <div class="section animated-item animated-delay-2">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-wrench"></i></div>
+                        <span class="tag tag-action">対処</span>
+                    </div>
+                    <div class="section-content">
+                        該当タスクに関係する部署とコスト構造を洗い出し、必要に応じて"暫定発注条件"を整備。責任者と予算枠をセットで整理し、ルールとしてチームに共有。
+                        
+                        <div style="margin-top: 20px; background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+                            <h4 style="margin-top: 0; color: var(--primary-color);">決裁権限表の基本要素：</h4>
+                            <ul style="margin-bottom: 0;">
+                                <li><strong>金額別権限</strong>：金額に応じた承認者階層</li>
+                                <li><strong>案件種別区分</strong>：案件タイプごとの承認フロー</li>
+                                <li><strong>部門別予算枠</strong>：部門ごとの予算責任区分</li>
+                                <li><strong>緊急時対応</strong>：例外処理のルール</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section animated-item animated-delay-3">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-lightbulb"></i></div>
+                        <span class="tag tag-insight">気づき・学び</span>
+                    </div>
+                    <div class="section-content">
+                        「誰が最終的に承認するのか」「どこが費用を持つのか」の2軸は、最初に握っておくべき。ここが不明だと動けるものも動かない。
+                        
+                        <div class="consultant-tip">
+                            意思決定プロセスの遅延は、多くの組織で「見えない機会損失」となっています。効果的な解決策としては、プロジェクト開始時に「決裁権限マトリックス」を作成することが挙げられます。これは金額範囲、案件種別、緊急度などの軸で、誰に決裁権があるかを明確にするものです。また、「決裁サイクルタイム」をKPIとして管理し、定期的に測定・改善することも効果的です。さらに、定型的な案件については「包括承認」の仕組みを導入し、一定金額までは事前承認されたルールの中で迅速に執行できるようにすることも検討すべきです。
+                        </div>
+                        
+                        <div class="common-pattern">
+                            この問題は「責任回避バイアス」と呼ばれる組織行動の一例です。特に影響が不確実な決定、失敗時のリスクが大きい決定、複数部門にまたがる決定などでは、担当者が「自分の権限外」として決定を先送りする傾向があります。また、マトリックス組織やプロジェクト型組織では「二重統治構造」が生じやすく、ライン組織とプロジェクト組織の両方の承認が必要になり、さらに複雑化します。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Genre F - Event 1 -->
+        <div class="slide" id="slide-10">
+            <h2 class="slide-title">ジャンルF：人材育成・チーム運営系</h2>
+            <div class="slide-content">
+                <div class="event-header">事象F-1：部下が一つの領域を自走できるようになった</div>
+                
+                <div class="section">
+                    <div class="section-title">
+                        <span class="tag tag-overview">概要</span>
+                    </div>
+                    <div class="section-content">
+                        当初は作成業務のみ担当していた部下が、レビュー・進行管理・関係者調整まで行えるようになり、1領域を任せられるようになった。
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">
+                        <span class="tag tag-action">対処</span>
+                    </div>
+                    <div class="section-content">
+                        タスクを難易度別に分解し、都度レビュー＋フィードバックをセットにして段階的に移管。
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">
+                        <span class="tag tag-insight">気づき・学び</span>
+                    </div>
+                    <div class="section-content">
+                        ストレッチさせる設計と、失敗させないフォローのバランスが鍵。「渡すこと」が目的ではなく、「支援しながら手放すこと」が育成の本質。
+                        <div class="consultant-tip">
+                            人材育成における「権限委譲」は最も効果的な成長手段ですが、単に「任せる」だけでは不十分です。効果的な権限委譲には「4D」のプロセスを踏むことが重要です。①Define（期待値の明確化）、②Demonstrate（お手本を見せる）、③Develop（段階的な難易度設定）、④Delegate（完全な権限委譲）です。特に注目すべきは「権限と責任のバランス」です。責任だけを与えて権限を与えないと不満が生じ、権限だけを与えて責任を求めないと成長が止まります。また「フィードバックループ」を確立し、取り組みの過程と結果の両方に対して建設的なフィードバックを行うことが成長速度を高めます。
+                    </div>
+                        <div class="common-pattern">
+                            人材育成における失敗パターンには、①過度の管理（マイクロマネジメント）、②逆に丸投げによる放置、③曖昧な評価基準、の3つがあります。特に「曖昧な成功基準」は、部下に不安と混乱をもたらし、不必要な報告・確認の増加や自信の喪失につながります。また「専門性の罠」と呼ばれる現象も注意が必要です。これは優秀な専門家ほど「自分でやった方が速い」と考え、育成よりも自分で対応してしまう傾向を指します。長期的には組織の成長を阻害する要因となります。
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Genre F - Event 2 -->
+        <div class="slide" id="slide-11">
+            <h2 class="slide-title">ジャンルF：人材育成・チーム運営系</h2>
+            <div class="slide-content">
+                <div class="event-header">事象F-2：部下が完璧ではない説明をした場面を巻き取る必要があった</div>
+                
+                <div class="section">
+                    <div class="section-title">
+                        <span class="tag tag-overview">概要</span>
+                    </div>
+                    <div class="section-content">
+                        資料説明において、本人なりに準備はしていたが要点が弱く、一部巻き取って補足する場面があった。
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">
+                        <span class="tag tag-action">対処</span>
+                    </div>
+                    <div class="section-content">
+                        過度に介入せず、終了後にフィードバック＋次回に向けて改善ポイントを共有。マインドや責任感の醸成も含めて対話。
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">
+                        <span class="tag tag-insight">気づき・学び</span>
+                    </div>
+                    <div class="section-content">
+                        「完璧じゃないが任せる」フェーズの育成では、巻き取り前提で任せる度量が必要。指摘より、支援と補完を重視。
+<div class="consultant-tip">
+                            「失敗」は最も効果的な学習機会であり、部下の成長にとって貴重な経験です。ただし「心理的安全性」の確保が前提条件です。失敗をフォローする際には、①その場での最小限の介入（顧客満足度とスタッフの自尊心のバランス）、②事後の建設的フィードバック（具体的な改善点と良かった点の両方）、③次回への準備支援（リハーサルやチェックリスト）の3段階アプローチが効果的です。また「成長のストーリー」を共有することも重要です。成功した上級者も最初は同様の失敗を経験したことを伝えることで、失敗を成長の一部として前向きに捉えられるようになります。
+                    </div>
+                        <div class="common-pattern">
+                            リーダーシップ発揮の場面では「過介入と過保護のジレンマ」がよく見られます。過度の介入は部下の自信と成長機会を奪い、過度の保護は失敗から学ぶ機会を減らします。このバランスは「状況対応リーダーシップ」の原則に従うことで取れます。これは部下の「能力」と「意欲」のレベルに応じてリーダーシップスタイルを変えるアプローチです。また「ハロー効果」も注意すべき傾向で、一度のミスから「この人は信頼できない」という全体評価をしてしまう認知バイアスを指します。こうしたバイアスが、次の成長機会を与えない悪循環を生み出すことがあります。
+                    </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Summary Slide -->
+        <div class="slide" id="slide-12">
+            <div class="bg-pattern"></div>
+            <h2 class="slide-title animated-item">まとめと今後への提言</h2>
+            <div class="slide-content">
+                <div class="section animated-item animated-delay-1">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-chart-line"></i></div>
+                        プロジェクト振り返りの主要ポイント
+                    </div>
+                    <div class="section-content">
+                        <p>このプロジェクト振り返りを通じて、以下の重要な教訓が得られました：</p>
+                        <ul style="line-height: 1.6; margin-left: 20px;">
+                            <li>文書体系の整理と階層構造の明確化の重要性</li>
+                            <li>公式ルールと現場運用の乖離を埋める仕組み作りの必要性</li>
+                            <li>数値やロジックへの過信ではなく、検証と理解の重要性</li>
+                            <li>関係者間の責任・役割分担の明確化と視覚化</li>
+                            <li>情報共有のための効率的なフォルダ構造設計</li>
+                            <li>意思決定プロセスと予算責任の明確化</li>
+                            <li>段階的な権限委譲と適切なフィードバックによる人材育成</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="section animated-item animated-delay-2">
+                    <div class="section-title">
+                        <div class="icon-box"><i class="fas fa-bullseye"></i></div>
+                        コンサルタントからの戦略的提言
+                    </div>
+                    <div class="section-content">
+                        <p>これらの課題を組織的に解決するためには、以下の４つの視点が重要です：</p>
+                        
+                        <div class="matrix-container">
+                            <div class="matrix-quadrant quadrant-high-impact-high-effort">
+                                <div class="matrix-title">構造的改革（戦略）</div>
+                                <ul style="margin-bottom: 0;">
+                                    <li>全社の文書体系ガバナンス確立</li>
+                                    <li>データ定義の標準化プログラム</li>
+                                    <li>意思決定プロセスの再設計</li>
+                                </ul>
+                                <div class="progress-chart">
+                                    <div class="progress-bar progress-warning" style="width: 65%;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="matrix-quadrant quadrant-high-impact-low-effort">
+                                <div class="matrix-title">即効性のある施策（戦術）</div>
+                                <ul style="margin-bottom: 0;">
+                                    <li>RACI図の全プロジェクト導入</li>
+                                    <li>KPI定義書の標準化</li>
+                                    <li>クイックウィン施策の実装</li>
+                                </ul>
+                                <div class="progress-chart">
+                                    <div class="progress-bar progress-success" style="width: 90%;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="matrix-quadrant quadrant-low-impact-high-effort">
+                                <div class="matrix-title">要検討領域</div>
+                                <ul style="margin-bottom: 0;">
+                                    <li>全システム統合</li>
+                                    <li>組織再編</li>
+                                    <li>全面的なプロセス再設計</li>
+                                </ul>
+                                <div class="progress-chart">
+                                    <div class="progress-bar progress-danger" style="width: 25%;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="matrix-quadrant quadrant-low-impact-low-effort">
+                                <div class="matrix-title">基盤強化施策</div>
+                                <ul style="margin-bottom: 0;">
+                                    <li>チームビルディング研修</li>
+                                    <li>定例振り返りの仕組み化</li>
+                                    <li>知識共有プラットフォーム構築</li>
+                                </ul>
+                                <div class="progress-chart">
+                                    <div class="progress-bar progress-success" style="width: 80%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="consultant-tip" style="margin-top: 20px;">
+                            組織変革を成功させるためには「構造」「プロセス」「人材」の三位一体の変革が必要です。特に「人材」面では、変革の必要性を理解し行動できる「変革エージェント」を各部門から選抜・育成することが重要です。また、新しい仕組みや制度は、単なる「導入」だけでは定着しません。定期的なモニタリングとフィードバックループを構築し、継続的な改善サイクルを回すことが肝要です。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Navigation Buttons -->
+        <div class="navigation">
+            <button class="nav-btn" id="prev-btn"><i class="fas fa-chevron-left"></i> 前へ</button>
+            <button class="nav-btn" id="next-btn">次へ <i class="fas fa-chevron-right"></i></button>
+        </div>
+        
+        <!-- Home Button -->
+        <button class="home-btn" id="home-btn"><i class="fas fa-home"></i> 目次へ</button>
+        
+        <!-- Slide Indicator -->
+        <div class="slide-indicator" id="slide-indicator">1 / 13</div>
+    </div>
+    
+    <script>
+        let currentSlide = 0;
+        const totalSlides = document.querySelectorAll('.slide').length;
+        
+        function updateSlideIndicator() {
+            document.getElementById('slide-indicator').textContent = `${currentSlide + 1} / ${totalSlides}`;
+        }
+        
+        function showSlide(slideIndex) {
+            document.querySelectorAll('.slide').forEach((slide, index) => {
+                if (index === slideIndex) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+            
+            currentSlide = slideIndex;
+            updateSlideIndicator();
+        }
+        
+        function goToNextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                showSlide(currentSlide + 1);
+            }
+        }
+        
+        function goToPrevSlide() {
+            if (currentSlide > 0) {
+                showSlide(currentSlide - 1);
+            }
+        }
+        
+        function goToSlide(slideIndex) {
+            if (slideIndex >= 0 && slideIndex < totalSlides) {
+                showSlide(slideIndex);
+            }
+        }
+        
+        document.getElementById('next-btn').addEventListener('click', goToNextSlide);
+        document.getElementById('prev-btn').addEventListener('click', goToPrevSlide);
+        document.getElementById('home-btn').addEventListener('click', () => goToSlide(1)); // Go to overview slide
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+                goToNextSlide();
+            } else if (e.key === 'ArrowLeft' || e.key === 'Backspace' || e.key === 'PageUp') {
+                goToPrevSlide();
+            } else if (e.key === 'Home') {
+                goToSlide(0);
+            } else if (e.key === 'End') {
+                goToSlide(totalSlides - 1);
+            }
+        });
+        
+        // Initial slide indicator update
+        updateSlideIndicator();
+    </script>
+</body>
+</html>
